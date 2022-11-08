@@ -7,9 +7,14 @@ export class Config {
   public readonly port: string;
 
   /**
-  * A prefix for every route path.
-  */
-  public readonly globalRoutePrefix: string;
+   * Base URL of the shortened URLs.
+   */
+  public readonly baseUrl: string;
+
+  /**
+   * The number of characters that make up the unique IDs.
+   */
+  public readonly uniqueIdLength: number;
 
   /**
    * Loads configuration parameters asynchronously from a configuration file then creates a configuration instance from that data.

@@ -6,6 +6,7 @@ type EncodedId = string;
 export class DatabaseServiceMock {
 
   private urlMap = new Map< EncodedId, string >();
+  private visitMap = new Map< EncodedId, number >();
 
   connect(): Promise<void> {
     return Promise.resolve();
@@ -28,7 +29,16 @@ export class DatabaseServiceMock {
     return Promise.resolve(this.urlMap.get(shortUrlEncodedId));
   }
 
-  cleanup(): Promise<boolean> {
-    return Promise.resolve(true);
+  trackVisit(shortUrlEncodedId: string): Promise<void>{
+    this.visitMap.set(shortUrlEncodedId, (this.visitMap.get(shortUrlEncodedId) ?? 0) + 1);
+    return Promise.resolve();
+  }
+
+  getVisitCount(shortUrlEncodedId: string): Promise<number | undefined>{
+    return Promise.resolve(this.visitMap.get(shortUrlEncodedId));
+  }
+
+  cleanup(): Promise<void> {
+    return Promise.resolve();
   }
 }

@@ -63,7 +63,27 @@ export class UrlShortenerService {
       throw new BadRequestException(`Invalid short URL.`);
     }
 
+    // Keep track of the number of visits for the current short URL
+    await this.database.trackVisit(encodedId);
+
     return originalUrl;
+  }
+
+  /**
+   * @param encodedId An encoded ID composed of alphanumeric characters.
+   * @returns The number of visits for the given short URL unique ID.
+   */
+  async getVisitCount(encodedId: EncodedId): Promise<number> {
+    if (encodedId.length != this.config.uniqueIdLength) {
+      throw new BadRequestException(`Invalid short URL.`);
+    }
+
+    const visitCount: number | undefined = await this.database.getVisitCount(encodedId);
+    if (visitCount === undefined) {
+      throw new BadRequestException(`Invalid short URL.`);
+    }
+
+    return visitCount;
   }
 
   /**

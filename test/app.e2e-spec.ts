@@ -89,4 +89,30 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect(dummyUrl);
   });
+
+  it('/visits (GET) should return 400 on malformed unique ID', () => {
+    return request(app.getHttpServer())
+      .get('/visits/invalid_ID')
+      .expect(400);
+  });
+
+  it('/visits (GET) should return the correct number of visits for a given unique ID', async () => {
+    const VISIT_COUNT = 5;
+
+    const dummyUrl = 'https://dummy';
+    const result = await request(app.getHttpServer())
+      .post('/shorten')
+      .send({ url: dummyUrl })
+      .expect(201);
+
+    const shortUrlUniqueId = `${result.text.substring(config.baseUrl.length + 1)}`;
+    for (let i = 0; i < VISIT_COUNT; i++) {
+      await request(app.getHttpServer()).get(`/${shortUrlUniqueId}`);
+    }
+
+    return request(app.getHttpServer())
+      .get(`/visits/${shortUrlUniqueId}`)
+      .expect(200)
+      .expect(`${VISIT_COUNT}`);
+  });
 });

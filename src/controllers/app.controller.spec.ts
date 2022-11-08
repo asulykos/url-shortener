@@ -54,9 +54,30 @@ describe('AppController', () => {
   it('should throw a BadRequestException if the provided short URL is invalid', () => {
     expect(appController.getOriginalUrl('=invalid=')).rejects.toThrow(BadRequestException);
 
+    // It should throw even if the string matches the expected format
     const validEncodedIdFormat = (UrlShortenerService as any).CHARACTER_SET[0].repeat(config.uniqueIdLength);
+    expect(appController.getOriginalUrl(validEncodedIdFormat)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should be able to return the correct visit count', async () => {
+    const VISIT_COUNT = 5;
+
+    const dummyUrl = 'https://dummy';
+    const shortenedUrl = await appController.generateShortenedUrl({ url: dummyUrl });
+    const shortenedUrlUniqueId = shortenedUrl.substring(config.baseUrl.length + 1);
+
+    for (let i = 0; i < VISIT_COUNT; i++) {
+      await appController.getOriginalUrl(shortenedUrlUniqueId);
+    }
+
+    expect(appController.getVisitCount(shortenedUrlUniqueId)).resolves.toBe(VISIT_COUNT);
+  });
+
+  it('should throw a BadRequestException if the provided short URL is invalid when querying the visit count', () => {
+    expect(appController.getVisitCount('=invalid=')).rejects.toThrow(BadRequestException);
 
     // It should throw even if the string matches the expected format
-    expect(appController.getOriginalUrl(validEncodedIdFormat)).rejects.toThrow(BadRequestException);
+    const validEncodedIdFormat = (UrlShortenerService as any).CHARACTER_SET[0].repeat(config.uniqueIdLength);
+    expect(appController.getVisitCount(validEncodedIdFormat)).rejects.toThrow(BadRequestException);
   });
 });

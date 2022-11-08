@@ -5,18 +5,26 @@ import { Injectable } from '@nestjs/common';
 import { Config } from './config';
 
 interface UrlEntry {
-  originalUrl:        string;
   shortUrlEncodedId:  string;
+  originalUrl:        string;
+}
+
+interface VisitEntry {
+  shortUrlEncodedId:  string;
+  count:              number;
 }
 
 @Injectable()
 export class DatabaseService {
 
-  private static readonly URL_COLLECTION_NAME = 'urls';
+  private static readonly URLS_COLLECTION_NAME = 'urls';
+  private static readonly VISITS_COLLECTION_NAME = 'visits';
 
   private readonly client: MongoDB.MongoClient;
   private database?: MongoDB.Db;
+
   private urls: MongoDB.Collection;
+  private visits: MongoDB.Collection;
 
   constructor(private readonly config: Config) {
     this.client = new MongoDB.MongoClient(config.databaseConnectionString);
@@ -30,7 +38,8 @@ export class DatabaseService {
     if (!this.database) {
       await this.client.connect();
       this.database = this.client.db(databaseName ?? this.config.databaseName);
-      this.urls = this.database.collection(DatabaseService.URL_COLLECTION_NAME);
+      this.urls = this.database.collection(DatabaseService.URLS_COLLECTION_NAME);
+      this.visits = this.database.collection(DatabaseService.VISITS_COLLECTION_NAME);
 
       await this.setupCollections();
     }
@@ -71,10 +80,30 @@ export class DatabaseService {
   }
 
   /**
-   * Removes every entry from the URL collection. Used only for testing!
+   * Increases the total visit number of a short URL by 1 in the visits collection.
+   * @param shortUrlEncodedId A short URL's encoded unique ID.
    */
-  cleanup(): Promise<boolean> {
-    return this.urls.drop();
+  async trackVisit(shortUrlEncodedId: string): Promise<void>{
+    await this.visits.updateOne({ shortUrlEncodedId }, { $inc:{count:1} }, { upsert: true });
+  }
+
+  /**
+   * @param shortUrlEncodedId A short URL's encoded unique ID.
+   * @returns The number of visits for the given short URL unique ID.
+   */
+  async getVisitCount(shortUrlEncodedId: string): Promise<number | undefined>{
+    const result: VisitEntry | null = await this.visits.findOne<VisitEntry>({ shortUrlEncodedId });
+    return result ? result.count : undefined;
+  }
+
+  /**
+   * Removes every entry from the database collections. Used only for testing!
+   */
+  async cleanup(): Promise<void> {
+    await Promise.all([
+      this.urls.drop(),
+      this.visits.drop()
+    ]);
   }
 
   /**

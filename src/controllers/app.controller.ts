@@ -21,6 +21,11 @@ export class AppController {
     return this.urlShortenerService.shortenUrl(data.url);
   }
 
+  @Get('visits/:uniqueId')
+  async getVisitCount(@Param('uniqueId') uniqueId: string): Promise<number> {
+    return this.urlShortenerService.getVisitCount(uniqueId);
+  }
+
   @Get(':uniqueId')
   async getOriginalUrl(@Param('uniqueId') uniqueId: string): Promise<string> {
     return this.urlShortenerService.resolveUniqueId(uniqueId);

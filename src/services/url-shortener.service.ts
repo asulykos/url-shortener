@@ -4,13 +4,12 @@ import { URL } from 'url';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { Config } from './config';
+import { DatabaseService } from './database.service';
 
 type EncodedId = string;
 
 @Injectable()
 export class UrlShortenerService {
-
-  private urlMap = new Map< EncodedId, string >();
 
   private static readonly CHARACTER_SET =
     [
@@ -19,7 +18,8 @@ export class UrlShortenerService {
       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
     ];
 
-  constructor(private readonly config: Config) {
+  constructor(private readonly config: Config,
+              private readonly database: DatabaseService) {
   }
 
   /**
@@ -27,7 +27,7 @@ export class UrlShortenerService {
    * @param originalUrl The URL to be shortened.
    * @returns The short URL version.
    */
-  public shortenUrl(originalUrl: string): string {
+  async shortenUrl(originalUrl: string): Promise<string> {
     // Test if the provided URL is a valid URL indeed
     try {
       new URL(originalUrl);
@@ -40,10 +40,10 @@ export class UrlShortenerService {
     // Avoid generating duplicate IDs
     do {
       encodedId = this.generateRandomId(this.config.uniqueIdLength);
-    } while (this.urlMap.get(encodedId));
+    } while (await this.database.hasEncodedId(encodedId));
 
     // Store mapping to memory
-    this.urlMap.set(encodedId, originalUrl);
+    await this.database.addUrlEntry(encodedId, originalUrl);
 
     return `${this.config.baseUrl}/${encodedId}`;
   }
@@ -53,12 +53,12 @@ export class UrlShortenerService {
    * @param encodedId An encoded ID composed of alphanumeric characters.
    * @returns The original URL, if found.
    */
-  public resolveUniqueId(encodedId: EncodedId): string {
+  async resolveUniqueId(encodedId: EncodedId): Promise<string> {
     if (encodedId.length != this.config.uniqueIdLength) {
       throw new BadRequestException(`Invalid short URL.`);
     }
 
-    const originalUrl: string | undefined = this.urlMap.get(encodedId);
+    const originalUrl: string | undefined = await this.database.getUrlByEncodedId(encodedId);
     if (!originalUrl) {
       throw new BadRequestException(`Invalid short URL.`);
     }

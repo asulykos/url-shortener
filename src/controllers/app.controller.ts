@@ -13,7 +13,7 @@ export class AppController {
   }
 
   @Post('shorten')
-  generateShortenedUrl(@Body() data: GenerateShortenedUrlDto): string {
+  async generateShortenedUrl(@Body() data: GenerateShortenedUrlDto): Promise<string> {
     if (!data.url) {
       throw new BadRequestException(`Request body should contain the 'url' property.`);
     }
@@ -22,7 +22,7 @@ export class AppController {
   }
 
   @Get(':uniqueId')
-  getOriginalUrl(@Param('uniqueId') uniqueId: string): string {
+  async getOriginalUrl(@Param('uniqueId') uniqueId: string): Promise<string> {
     return this.urlShortenerService.resolveUniqueId(uniqueId);
   }
 }

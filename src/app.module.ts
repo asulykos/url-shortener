@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AppController } from './controllers';
-import { Config, UrlShortenerService } from './services';
+import { Config, DatabaseService, UrlShortenerService } from './services';
 
 @Module({
   imports: [],
@@ -13,6 +13,7 @@ import { Config, UrlShortenerService } from './services';
       provide: Config,
       useFactory: Config.create
     },
+    DatabaseService,
     UrlShortenerService
   ],
   exports: [

@@ -17,6 +17,16 @@ export class Config {
   public readonly uniqueIdLength: number;
 
   /**
+   * Connection string to a MongoDB server
+   */
+  public readonly databaseConnectionString: string;
+
+  /**
+   * Name of the MongoDB database
+   */
+  public readonly databaseName: string;
+
+  /**
    * Loads configuration parameters asynchronously from a configuration file then creates a configuration instance from that data.
    * @returns The configuration service instance.
    */

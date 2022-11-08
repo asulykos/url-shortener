@@ -4,13 +4,14 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { AppModule } from './../src/app.module';
-import { Config, UrlShortenerService } from '../src/services';
+import { Config, DatabaseService, UrlShortenerService } from '../src/services';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let config: Config;
+  let database: DatabaseService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -18,6 +19,20 @@ describe('AppController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
     config = app.get<Config>(Config);
+
+    database = app.get(DatabaseService);
+    await database.connect('test'); // connect to 'test' database instead of the production DB
+  });
+
+  afterAll(async () => {
+    // Remove test collections
+    await database.cleanup();
+
+    // Wait for app termination
+    await Promise.all([
+      app.close(),
+      database.disconnect()
+    ]);
   });
 
   it('/shorten (POST) should return 201 with the correctly formed short URL', () => {
